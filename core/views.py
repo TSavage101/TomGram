@@ -3,9 +3,59 @@ from django.contrib.auth.models import User, auth # type: ignore
 from django.contrib import messages
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
-from .models import Profile
+from .models import Profile, Follow, Post
 from itertools import chain
 import random
+
+def calc_followers_display(profile):
+    if profile.posts < 1000:
+        profile.dposts = f"{profile.posts}"
+        
+    if profile.posts >= 1000 and profile.posts < 1000000:
+        calc = round(profile.posts / 1000, 1)
+        profile.dposts = f"{calc}K"
+        
+    if profile.posts >= 1000000 and profile.posts < 1000000000:
+        calc = round(profile.posts / 1000000, 1)
+        profile.dposts = f"{calc}M"
+            
+    if profile.posts >= 1000000000 and profile.posts < 1000000000000:
+        calc = round(profile.posts / 1000000000, 1)
+        profile.dposts = f"{calc}B"
+        
+    # followers display
+    if profile.followers < 1000:
+        profile.dfollowers = f"{profile.followers}"
+    
+    if profile.followers >= 1000 and profile.followers < 1000000:
+        calc = round(profile.followers / 1000, 1)
+        profile.dfollowers = f"{calc}K"
+    
+    if profile.followers >= 1000000 and profile.followers < 1000000000:
+        calc = round(profile.followers / 1000000, 1)
+        profile.dfollowers = f"{calc}M"
+        
+    if profile.followers >= 1000000000 and profile.followers < 1000000000000:
+        calc = round(profile.followers / 1000000000, 1)
+        profile.dfollowers = f"{calc}B"
+            
+    # following display
+    if profile.following < 1000:
+        profile.dfollowing = f"{profile.following}"
+    
+    if profile.following >= 1000 and profile.following < 1000000:
+        calc = round(profile.following / 1000, 1)
+        profile.dfollowing = f"{calc}K"
+    
+    if profile.following >= 1000000 and profile.following < 1000000000:
+        calc = round(profile.following / 1000000, 1)
+        profile.dfollowing = f"{calc}M"
+        
+    if profile.following >= 1000000000 and profile.following < 1000000000000:
+        calc = round(profile.following / 1000000000, 1)
+        profile.dfollowing = f"{calc}B"
+        
+    profile.save()
 
 # Create your views here.
 @login_required(login_url='login')
@@ -148,61 +198,14 @@ def settings(request, *args, **kwargs):
         
         return render(request, 'setting.html', context)
 
-@login_required(login_url='login')
+@login_required(login_url='login') # type: ignore
 def profile(request, username, *args, **kwargs):
     if User.objects.filter(username=username).exists():
         user = User.objects.get(username=username)
         profile = Profile.objects.get(user=user)
         
         # posts display
-        if profile.posts < 1000:
-            profile.dposts = f"{profile.posts}"
-        
-        if profile.posts >= 1000 and profile.posts < 1000000:
-            calc = round(profile.posts / 1000, 1)
-            profile.dposts = f"{calc}K"
-        
-        if profile.posts >= 1000000 and profile.posts < 1000000000:
-            calc = round(profile.posts / 1000000, 1)
-            profile.dposts = f"{calc}M"
-            
-        if profile.posts >= 1000000000 and profile.posts < 1000000000000:
-            calc = round(profile.posts / 1000000000, 1)
-            profile.dposts = f"{calc}B"
-        
-        # followers display
-        if profile.followers < 1000:
-            profile.dfollowers = f"{profile.followers}"
-        
-        if profile.followers >= 1000 and profile.followers < 1000000:
-            calc = round(profile.followers / 1000, 1)
-            profile.dfollowers = f"{calc}K"
-        
-        if profile.followers >= 1000000 and profile.followers < 1000000000:
-            calc = round(profile.followers / 1000000, 1)
-            profile.dfollowers = f"{calc}M"
-            
-        if profile.followers >= 1000000000 and profile.followers < 1000000000000:
-            calc = round(profile.followers / 1000000000, 1)
-            profile.dfollowers = f"{calc}B"
-            
-        # following display
-        if profile.following < 1000:
-            profile.dfollowing = f"{profile.following}"
-        
-        if profile.following >= 1000 and profile.following < 1000000:
-            calc = round(profile.following / 1000, 1)
-            profile.dfollowing = f"{calc}K"
-        
-        if profile.following >= 1000000 and profile.following < 1000000000:
-            calc = round(profile.following / 1000000, 1)
-            profile.dfollowing = f"{calc}M"
-            
-        if profile.following >= 1000000000 and profile.following < 1000000000000:
-            calc = round(profile.following / 1000000000, 1)
-            profile.dfollowing = f"{calc}B"
-            
-        profile.save()
+        calc_followers_display(profile)
         
         context = {
             'user': user,
@@ -210,7 +213,29 @@ def profile(request, username, *args, **kwargs):
         }
         
         if request.method == 'POST':
-            pass
+            
+            if  'follow' in request.POST:
+                followed = request.POST['follow']
+            
+                new_follower = Follow.objects.create(user=request.user.username, followed=followed)
+                new_follower.save()
+            
+                g_user = User.objects.get(username=request.user.username)
+                g_profile = Profile.objects.get(user=g_user, id_user=g_user.id) # type: ignore
+            
+                g_profile.following += 1
+                g_profile.save()
+            
+                f_user = User.objects.get(username=followed)
+                f_profile = Profile.objects.get(user=f_user, id_user=f_user.id) # type: ignore
+            
+                f_profile.followers += 1
+                f_profile.save()
+                
+                calc_followers_display(f_profile)
+            
+                return HttpResponse('Follow Successful')
+            
         else:
             return render(request, 'profile.html', context)
     else:

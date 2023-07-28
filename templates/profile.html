@@ -18,6 +18,9 @@
     <link rel="stylesheet" href="{% static 'css/responsive.css' %}">
 	<link rel="stylesheet" href="{% static 'assets/css/tailwind.css' %}">
 
+	<script src="{% static 'jquery.min.js' %}"></script>
+	<script src="{% static 'jquery.js' %}"></script>
+
 </head>
 <body>
 <!--<div class="se-pre-con"></div>-->
@@ -28,20 +31,20 @@
 	<section>
 			<div class="feature-photo">
 				<figure><img src="{% static 'images/resources/timeline-1.jpg' %}" alt=""></figure>
-				<form>
+				<div>
 					<div class="add-btn flex space-x-5 md:text-3xl lg:text-3xl sm:text-sm md:text-md">
 					<span style="color: white; margin-right: 400px; margin-top: 20px;"><b><u><a href="/">Home</a></u></b></span>
 					<span style="color: white;" class="flex flex-col items-center space-y-3"><b>{{ profile.dposts }}</b><b>Posts</b></span>
-					<span style="color: white;" class="flex flex-col items-center space-y-3"><b>{{ profile.dfollowers }}</b><b>Followers</b></span>
+					<span style="color: white;" class="flex flex-col items-center space-y-3"><b class="nof"></b><b>Followers</b></span>
 					<span style="color: white;" class="flex flex-col items-center space-y-3"><b>{{ profile.dfollowing }}</b> <b>Following</b></span>
 					{% if request.user.username != user.username %}
-					<form id="follow">
-						<input type="hidden" name="follow">
+					<form id="follow"> {% csrf_token %}
+						<input type="hidden" name="follow" id="followh" value="{{ user.username }}">
 						<a href="" title="" data-ripple="" style="height: 50px; margin-top: 15px;"><button type="submit" style="background-color: #ffc0cb; border: #ffc0cb; height: 40px;">Follow</button></a>
 					</form>
 					{% endif %}
 					</div>
-				</form>
+				</div>
 
 				<!-- <form class="edit-phto">
 					<i class="fa fa-camera-retro"></i>
@@ -59,7 +62,7 @@
 									<form class="edit-phto">
 										<i class="fa fa-camera-retro"></i>
 										<label class="fileContainer">
-											<a href="#account-settings">Upload Profile Photo</a>
+											<a href="{% url 'settings' %}">Goto Settings to Change</a>
 										</label>
 									</form>
 								</figure>
@@ -161,6 +164,23 @@
 	</section>
 
 	<script type="text/javascript">
+
+		$(document).ready(() => {
+			$.ajax({
+				type: 'GET',
+				url: "{% url 'getFollowers' user.username %}",
+				success: function(data) {
+					var nof = document.querySelector('.nof')
+					nof.innerHTML = data['dfollowers']
+					console.log(data['dfollowers'])
+				},
+				error: function(response) {
+					alert("An error occured when getting your data!!!")
+				},
+			
+				});
+		})
+
 		$(document).on('submit', '#follow', function(e){
 			e.preventDefault();
 	
@@ -168,19 +188,42 @@
 				type: 'POST',
 				url: "{% url 'profile' user.username %}",
 				data: {
-					follow: $('follow').val(),
+					follow: $('#followh').val(),
 					csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
 				},
-				success: function(data) {
-					alert("Follow successfully!!")
+				success: function() {
+						getabc();
 				},
 			});
-	});
+		});
+
+		const getabc = () => {
+			var nof = $('.nof')
+			nof.empty();
+			
+				$.ajax({
+					type: 'GET',
+					url: "{% url 'getFollowers' user.username %}",
+					success: function(data) {
+						
+						nof.append(data['dfollowers'])
+						console.log(data['dfollowers'])
+					},
+					error: function(response) {
+						alert("An error occured when getting your data!!!")
+					},
+			
+				});
+		}
 	</script>
 	
-	<script data-cfasync="false" src="{% static '../../cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js' %}"></script><script src="{% static 'js/main.min.js' %}"></script>
+	<script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+	<script data-cfasync="false" src="{% static '../../cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js' %}"></script>
+	<script src="{% static 'js/main.min.js' %}"></script>
 	<script src="{% static 'js/script.js' %}"></script>
 	<script src="{% static 'assets/js/jquery-3.3.1.min.js' %}"></script>
+	<script src="{% static 'jquery.min.js' %}"></script>
+	<script src="{% static 'jquery.js' %}"></script>
 	
 </body>	
 
