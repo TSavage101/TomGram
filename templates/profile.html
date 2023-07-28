@@ -166,11 +166,13 @@
 	<script type="text/javascript">
 
 		$(document).ready(() => {
+			var nof = document.querySelector('.nof')
+			nof.innerHTML = '...';
 			$.ajax({
 				type: 'GET',
 				url: "{% url 'getFollowers' user.username %}",
 				success: function(data) {
-					var nof = document.querySelector('.nof')
+					
 					nof.innerHTML = data['dfollowers']
 					console.log(data['dfollowers'])
 				},
